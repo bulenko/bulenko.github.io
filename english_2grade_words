@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест по английским словам</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .progress {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        .audio-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-bottom: 25px;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .audio-btn:hover {
+            background-color: #2980b9;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-btn {
+            background-color: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            padding-left: 20px;
+        }
+        .option-btn:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+        .option-btn.correct {
+            background-color: #2ecc71 !important;
+            color: white;
+            border-color: #27ae60;
+        }
+        .option-btn.wrong {
+            background-color: #e74c3c !important;
+            color: white;
+            border-color: #c0392b;
+        }
+        .score-screen {
+            display: none;
+        }
+        .restart-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .restart-btn:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <!-- Игровой экран -->
+    <div id="quiz-screen">
+        <h1 id="word-display">Послушай и переведи</h1>
+        <div class="progress" id="progress">Вопрос 1 из 37</div>
+        
+        <button class="audio-btn" id="listen-btn">
+            🔊 СЛУШАТЬ СЛОВО
+        </button>
+
+        <div class="options-container" id="options">
+            <!-- Кнопки вариантов ответов добавятся через JS -->
+        </div>
+    </div>
+
+    <!-- Экран результатов -->
+    <div id="score-screen" class="score-screen">
+        <h1>Тест завершен!</h1>
+        <p id="final-score" style="font-size: 20px; font-weight: bold;"></p>
+        <button class="restart-btn" id="restart-btn">Пройти еще раз</button>
+    </div>
+</div>
+
+<script>
+    // Весь массив из 37 слов (слово, перевод)
+    const vocabulary = [
+        { eng: 'ant', rus: 'муравей' },
+        { eng: 'bed', rus: 'кровать' },
+        { eng: 'cat', rus: 'кот' },
+        { eng: 'dog', rus: 'собака' },
+        { eng: 'egg', rus: 'яйцо' },
+        { eng: 'flag', rus: 'флаг' },
+        { eng: 'glass', rus: 'стакан' },
+        { eng: 'horse', rus: 'лошадь' },
+        { eng: 'ink', rus: 'чернила' },
+        { eng: 'jug', rus: 'кувшин' },
+        { eng: 'kangaroo', rus: 'кенгуру' },
+        { eng: 'lamp', rus: 'лампа' },
+        { eng: 'mouse', rus: 'мышь' },
+        { eng: 'nest', rus: 'гнездо' },
+        { eng: 'orange', rus: 'апельсин' },
+        { eng: 'pin', rus: 'булавка' },
+        { eng: 'queen', rus: 'королева' },
+        { eng: 'rabbit', rus: 'кролик' },
+        { eng: 'snake', rus: 'змея' },
+        { eng: 'tree', rus: 'дерево' },
+        { eng: 'umbrella', rus: 'зонт' },
+        { eng: 'vest', rus: 'майка, жилет' },
+        { eng: 'window', rus: 'окно' },
+        { eng: 'box', rus: 'коробка' },
+        { eng: 'yacht', rus: 'яхта' },
+        { eng: 'zip', rus: 'застёжка-молния' },
+        { eng: 'sheep', rus: 'овца' },
+        { eng: 'fish', rus: 'рыба' },
+        { eng: 'ship', rus: 'корабль' },
+        { eng: 'chick', rus: 'цыплёнок' },
+        { eng: 'cheese', rus: 'сыр' },
+        { eng: 'the', rus: 'определённый артикль' },
+        { eng: 'this', rus: 'это(т)' },
+        { eng: 'thumb', rus: 'большой палец (руки)' },
+        { eng: 'thimble', rus: 'напёрсток' },
+        { eng: 'photo', rus: 'фотография' },
+        { eng: 'dolphin', rus: 'дельфин' },
+        { eng: 'elephant', rus: 'слон' }
+    ];
+
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let canAnswer = true;
+
+    // Перемешивание массива
+    function shuffle(array) {
+        return array.sort(() => Math.random() - 0.5);
+    }
+
+    // Озвучка английского слова
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // Остановить прошлую озвучку, если она идет
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; // Чуть замедленная скорость для лучшего восприятия
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert('Ваш браузер не поддерживает синтез речи. Попробуйте Chrome, Safari или Edge.');
+        }
+    }
+
+    // Инициализация нового теста
+    function startQuiz() {
+        currentQuestions = shuffle([...vocabulary]);
+        currentIndex = 0;
+        score = 0;
+        document.getElementById('score-screen').style.display = 'none';
+        document.getElementById('quiz-screen').style.display = 'block';
+        showQuestion();
+    }
+
+    // Показ текущего вопроса
+    function showQuestion() {
+        canAnswer = true;
+        const currentWord = currentQuestions[currentIndex];
+        
+        // Обновляем счетчик
+        document.getElementById('progress').innerText = `Вопрос ${currentIndex + 1} из ${currentQuestions.length}`;
+        
+        // Автоматически озвучиваем слово при появлении (с небольшой задержкой для стабильности)
+        setTimeout(() => speak(currentWord.eng), 300);
+
+        // Собираем варианты ответов (1 правильный + 3 случайных неправильных)
+        let options = [currentWord.rus];
+        let wrongOptions = vocabulary.filter(w => w.rus !== currentWord.rus).map(w => w.rus);
+        shuffle(wrongOptions);
+        
+        // Берем первые 3 неправильных и объединяем с правильным
+        options = options.concat(wrongOptions.slice(0, 3));
+        shuffle(options);
+
+        // Отрисовка кнопок ответов
+        const optionsContainer = document.getElementById('options');
+        optionsContainer.innerHTML = '';
+        
+        options.forEach(optionText => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = optionText;
+            btn.onclick = () => checkAnswer(btn, optionText, currentWord.rus);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    // Проверка ответа
+    function checkAnswer(selectedBtn, selectedText, correctText) {
+        if (!canAnswer) return;
+        canAnswer = false;
+
+        const optionsContainer = document.getElementById('options');
+        const buttons = optionsContainer.getElementsByClassName('option-btn');
+
+        if (selectedText === correctText) {
+            selectedBtn.classList.add('correct');
+            score++;
+        } else {
+            selectedBtn.classList.add('wrong');
+            // Подсвечиваем правильный, чтобы пользователь запомнил ошибку
+            for (let btn of buttons) {
+                if (btn.innerText === correctText) {
+                    btn.classList.add('correct');
+                }
+            }
+        }
+
+        // Задержка перед следующим вопросом
+        setTimeout(() => {
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }, 1500);
+    }
+
+    // Показ экрана результатов
+    function showResults() {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('score-screen').style.display = 'block';
+        document.getElementById('final-score').innerText = `Вы правильно перевели ${score} из ${currentQuestions.length} слов!`;
+    }
+
+    // Привязка событий к главным кнопкам
+    document.getElementById('listen-btn').onclick = () => {
+        if (currentQuestions[currentIndex]) {
+            speak(currentQuestions[currentIndex].eng);
+        }
+    };
+    document.getElementById('restart-btn').onclick = startQuiz;
+
+    // Старт игры при загрузке страницы
+    window.onload = startQuiz;
+</script>
+
+</body>
+</html>
