@@ -1,6 +1,561 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f0f3f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1d21" media="(prefers-color-scheme: dark)">
+<title>Тест: Все тональности</title>
+<style>
+    :root {
+        --bg: #f0f3f5;
+        --card: #ffffff;
+        --text: #2c3e50;
+        --muted: #7f8c8d;
+        --border: #e0e4e8;
+        --accent: #3498db;
+        --accent-hover: #2980b9;
+        --correct: #2ecc71;
+        --wrong: #e74c3c;
+        --next-bg: #2c3e50;
+        --next-hover: #1a252f;
+        --shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --staff: #000;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #1a1d21;
+            --card: #24282d;
+            --text: #e8eaed;
+            --muted: #9aa0a6;
+            --border: #3a3f45;
+            --accent: #4aa8e8;
+            --accent-hover: #5cb6f0;
+            --correct: #34d17a;
+            --wrong: #f0554b;
+            --next-bg: #3a3f45;
+            --next-hover: #4a5057;
+            --shadow: 0 4px 20px rgba(0,0,0,0.4);
+            --staff: #e8eaed;
+        }
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100dvh;
+        transition: background 0.3s, color 0.3s;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: max(12px, env(safe-area-inset-top)) 12px
+                 max(12px, env(safe-area-inset-bottom)) 12px;
+    }
+
+    .box {
+        background: var(--card);
+        width: 100%;
+        max-width: 560px;
+        padding: clamp(16px, 4vw, 28px);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        transition: background 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    h1 {
+        margin: 0 0 6px;
+        font-size: clamp(17px, 4.5vw, 21px);
+        text-align: center;
+        line-height: 1.25;
+    }
+
+    .subtitle {
+        display: block;
+        font-size: 0.8em;
+        color: var(--muted);
+        font-weight: 400;
+    }
+
+    #progress {
+        text-align: center;
+        color: var(--muted);
+        font-size: clamp(13px, 3.5vw, 15px);
+        margin-bottom: 8px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), var(--correct));
+        border-radius: 3px;
+        transition: width 0.35s ease;
+    }
+
+    .staff-container {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        margin: 0 0 18px;
+        display: flex;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .staff-container svg {
+        width: 100%;
+        height: auto;
+        max-height: 120px;
+        display: block;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 0 0 14px;
+    }
+
+    @media (min-width: 480px) {
+        .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .btn {
+        width: 100%;
+        min-height: 52px;
+        padding: 12px 14px;
+        border: 2px solid var(--accent);
+        background: var(--card);
+        color: var(--text);
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: clamp(14px, 3.8vw, 16px);
+        font-weight: 600;
+        line-height: 1.3;
+        transition: background 0.15s, color 0.15s, transform 0.05s, border-color 0.15s;
+        touch-action: manipulation;
+        font-family: inherit;
+    }
+
+    .btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
+    .btn:disabled { cursor: default; }
+
+    .btn.correct {
+        background: var(--correct) !important;
+        color: #fff !important;
+        border-color: var(--correct) !important;
+        animation: pulse 0.4s ease;
+    }
+    .btn.wrong {
+        background: var(--wrong) !important;
+        color: #fff !important;
+        border-color: var(--wrong) !important;
+        animation: shake 0.4s ease;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+        100% { transform: scale(1); }
+    }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+    }
+
+    #feed {
+        font-weight: 700;
+        text-align: center;
+        margin: 12px 0;
+        min-height: 24px;
+        font-size: clamp(14px, 3.8vw, 16px);
+        transition: color 0.2s;
+    }
+
+    #next {
+        display: none;
+        width: 100%;
+        min-height: 54px;
+        background: var(--next-bg);
+        color: #fff;
+        border: none;
+        font-size: clamp(15px, 4vw, 17px);
+    }
+
+    #next:hover { background: var(--next-hover); }
+
+    /* Индикатор свайпа */
+    .swipe-hint {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 28px;
+        color: var(--muted);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        user-select: none;
+    }
+    .swipe-hint.left  { left: 8px; }
+    .swipe-hint.right { right: 8px; }
+    .swipe-hint.visible { opacity: 0.6; }
+
+    /* Анимация появления вопроса */
+    .fade-in {
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Финальный экран */
+    .final { text-align: center; padding: 10px 0; }
+    .final h2 {
+        font-size: clamp(20px, 5.5vw, 26px);
+        margin: 8px 0;
+    }
+    .final h3 {
+        font-size: clamp(16px, 4.5vw, 20px);
+        color: var(--accent);
+        margin: 12px 0 8px;
+    }
+    .best-score {
+        color: var(--muted);
+        font-size: clamp(13px, 3.5vw, 15px);
+        margin-bottom: 24px;
+    }
+    .medal {
+        font-size: clamp(48px, 14vw, 72px);
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+</style>
+</head>
+<body>
+
+<div class="box" id="box">
+    <h1>Определите тональность<span class="subtitle">(все 30 ладов)</span></h1>
+    <div id="progress">Вопрос 1 из 10</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="staff-container" id="canvas"></div>
+
+    <div class="grid" id="options"></div>
+    <div id="feed"></div>
+    <button id="next" class="btn">Дальше →</button>
+
+    <div class="swipe-hint left"  id="hintLeft">‹</div>
+    <div class="swipe-hint right" id="hintRight">›</div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    // --- Данные ---
+    const sharpsY = "22,37,17,32,47,27,42".split(",").map(Number);
+    const flatsY  = "42,27,47,32,52,37,57".split(",").map(Number);
+
+    const allKeys = [
+        { name: "До мажор / Ля минор", type: "none", count: 0, alts: ["Соль мажор / Ми минор", "Фа мажор / Ре минор", "Ре мажор / Си минор"] },
+        { name: "Соль мажор / Ми минор", type: "sharp", count: 1, alts: ["До мажор / Ля минор", "Ре мажор / Си минор", "Ля мажор / Фа-диез минор"] },
+        { name: "Ре мажор / Си минор", type: "sharp", count: 2, alts: ["Соль мажор / Ми минор", "Ля мажор / Фа-диез минор", "Ми мажор / До-диез минор"] },
+        { name: "Ля мажор / Фа-диез минор", type: "sharp", count: 3, alts: ["Ре мажор / Си минор", "Ми мажор / До-диез минор", "Си мажор / Соль-диез минор"] },
+        { name: "Ми мажор / До-диез минор", type: "sharp", count: 4, alts: ["Ля мажор / Фа-диез минор", "Си мажор / Соль-диез минор", "Фа-диез мажор / Ре-диез минор"] },
+        { name: "Си мажор / Соль-диез минор", type: "sharp", count: 5, alts: ["Ми мажор / До-диез минор", "Фа-диез мажор / Ре-диез минор", "До-диез мажор / Ля-диез минор"] },
+        { name: "Фа-диез мажор / Ре-диез минор", type: "sharp", count: 6, alts: ["Си мажор / Соль-диез минор", "До-диез мажор / Ля-диез минор", "Ре мажор / Си минор"] },
+        { name: "До-диез мажор / Ля-диез минор", type: "sharp", count: 7, alts: ["Фа-диез мажор / Ре-диез минор", "Си мажор / Соль-диез минор", "Соль мажор / Ми минор"] },
+        { name: "Фа мажор / Ре минор", type: "flat", count: 1, alts: ["До мажор / Ля минор", "Си-бемоль мажор / Соль минор", "Ми-бемоль мажор / До минор"] },
+        { name: "Си-бемоль мажор / Соль минор", type: "flat", count: 2, alts: ["Фа мажор / Ре минор", "Ми-бемоль мажор / До минор", "Ля-бемоль мажор / Фа минор"] },
+        { name: "Ми-бемоль мажор / До минор", type: "flat", count: 3, alts: ["Си-бемоль мажор / Соль минор", "Ля-бемоль мажор / Фа минор", "Ре-бемоль мажор / Си-бемоль минор"] },
+        { name: "Ля-бемоль мажор / Фа минор", type: "flat", count: 4, alts: ["Ми-бемоль мажор / До минор", "Ре-бемоль мажор / Си-бемоль минор", "Соль-бемоль мажор / Ми-бемоль минор"] },
+        { name: "Ре-бемоль мажор / Си-бемоль минор", type: "flat", count: 5, alts: ["Ля-бемоль мажор / Фа минор", "Соль-бемоль мажор / Ми-бемоль минор", "До-бемоль мажор / Ля-бемоль минор"] },
+        { name: "Соль-бемоль мажор / Ми-бемоль минор", type: "flat", count: 6, alts: ["Ре-бемоль мажор / Си-бемоль минор", "До-бемоль мажор / Ля-бемоль минор", "Фа мажор / Ре минор"] },
+        { name: "До-бемоль мажор / Ля-бемоль минор", type: "flat", count: 7, alts: ["Соль-бемоль мажор / Ми-бемоль минор", "Ре-бемоль мажор / Си-бемоль минор", "Си-бемоль мажор / Соль минор"] }
+    ];
+
+    const TOTAL_QUESTIONS = 10;
+    const STORAGE_KEY = "tonality_best_score";
+
+    // --- Состояние ---
+    let gamePool = [];
+    let current = 0;
+    let score = 0;
+    let locked = false;
+
+    // --- DOM ---
+    const $box          = document.getElementById("box");
+    const $progress     = document.getElementById("progress");
+    const $progressFill = document.getElementById("progressFill");
+    const $canvas       = document.getElementById("canvas");
+    const $options      = document.getElementById("options");
+    const $feed         = document.getElementById("feed");
+    const $next         = document.getElementById("next");
+    const $hintLeft     = document.getElementById("hintLeft");
+    const $hintRight    = document.getElementById("hintRight");
+
+    // --- Утилиты ---
+    function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function vibrate(pattern) {
+        if ("vibrate" in navigator) {
+            try { navigator.vibrate(pattern); } catch (e) {}
+        }
+    }
+
+    function getBestScore() {
+        const v = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
+        return isNaN(v) ? 0 : v;
+    }
+
+    function setBestScore(v) {
+        try { localStorage.setItem(STORAGE_KEY, String(v)); } catch (e) {}
+    }
+
+    // --- SVG ---
+    function renderStaffSVG(type, count) {
+        const W = 320, H = 85;
+        let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+        for (let i = 0; i < 5; i++) {
+            const y = 22 + i * 10;
+            svg += `<line x1="5" y1="${y}" x2="315" y2="${y}" stroke="currentColor" stroke-width="1.4"/>`;
+        }
+
+        svg += `<path d="M26,67 C27,67 29,66 29,63 C29,59 23,54 23,43 C23,31 34,10 34,4 C34,2 32,1 31,1 C29,1 27,8 27,16 C27,27 38,44 38,54 C38,63 32,69 26,69 C20,69 15,64 15,58 C15,47 28,40 37,39 C36,29 29,18 24,25 C21,29 21,35 24,39 C26,41 27,40 26,38 C25,37 24,34 25,31 C27,27 32,32 33,39 C24,41 17,47 17,56 C17,63 21,67 26,67 Z" fill="currentColor" transform="scale(1.2) translate(-3,-2)"/>`;
+
+        const startX = 65;
+
+        if (type === "sharp") {
+            for (let i = 0; i < count; i++) {
+                const x = startX + i * 16;
+                const y = sharpsY[i];
+                svg += `<g transform="translate(${x}, ${y}) scale(0.9)">
+                    <line x1="-3" y1="-4" x2="3" y2="-6" stroke="currentColor" stroke-width="2.5"/>
+                    <line x1="-3" y1="2" x2="3" y2="0" stroke="currentColor" stroke-width="2.5"/>
+                    <line x1="-1" y1="-10" x2="-1" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="1" y1="-7" x2="1" y2="9" stroke="currentColor" stroke-width="1.5"/>
+                </g>`;
+            }
+        } else if (type === "flat") {
+            for (let i = 0; i < count; i++) {
+                const x = startX + i * 15;
+                const y = flatsY[i];
+                svg += `<g transform="translate(${x}, ${y}) scale(0.95)">
+                    <line x1="-2" y1="-12" x2="-2" y2="4" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M-2,0 C1,-4 4,-1 2,2 C0,4 -2,2 -2,2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </g>`;
+            }
+        }
+
+        svg += `</svg>`;
+        return svg;
+    }
+
+    // --- Игра ---
+    function start() {
+        gamePool = shuffle(allKeys).slice(0, TOTAL_QUESTIONS);
+        current = 0;
+        score = 0;
+        show();
+    }
+
+    function show() {
+        locked = false;
+        const q = gamePool[current];
+
+        $progress.textContent = `Вопрос ${current + 1} из ${gamePool.length}`;
+        $progressFill.style.width = `${(current / gamePool.length) * 100}%`;
+        $canvas.innerHTML = renderStaffSVG(q.type, q.count);
+        $feed.textContent = "";
+
+        $canvas.classList.remove("fade-in");
+        void $canvas.offsetWidth;
+        $canvas.classList.add("fade-in");
+
+        $next.style.display = "none";
+
+        const opts = shuffle([q.name, ...q.alts]);
+        $options.innerHTML = "";
+
+        opts.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn";
+            btn.textContent = opt;
+            btn.addEventListener("click", () => check(btn, opt));
+            $options.appendChild(btn);
+        });
+    }
+
+    function check(btn, chosen) {
+        if (locked) return;
+        locked = true;
+
+        const q = gamePool[current];
+        const buttons = $options.querySelectorAll(".btn");
+        buttons.forEach(b => b.disabled = true);
+
+        if (chosen === q.name) {
+            btn.classList.add("correct");
+            $feed.textContent = "🎉 Абсолютно верно!";
+            $feed.style.color = "var(--correct)";
+            score++;
+            vibrate(50);
+        } else {
+            btn.classList.add("wrong");
+            $feed.textContent = "❌ Неверно.";
+            $feed.style.color = "var(--wrong)";
+            buttons.forEach(b => {
+                if (b.textContent === q.name) b.classList.add("correct");
+            });
+            vibrate([40, 60, 40]);
+        }
+
+        $next.style.display = "block";
+    }
+
+    function nextQuestion() {
+        current++;
+        if (current < gamePool.length) {
+            show();
+        } else {
+            finish();
+        }
+    }
+
+    function finish() {
+        const best = getBestScore();
+        let medal = "🎵";
+        let message = "Хорошее начало!";
+
+        if (score === gamePool.length) {
+            medal = "🏆";
+            message = "Идеально! Вы знаток тональностей!";
+        } else if (score >= 8) {
+            medal = "🥇";
+            message = "Отличный результат!";
+        } else if (score >= 6) {
+            medal = "🥈";
+            message = "Хорошо, но есть куда расти.";
+        } else if (score >= 4) {
+            medal = "🥉";
+            message = "Неплохо, потренируйтесь ещё.";
+        }
+
+        const isNewBest = score > best;
+        if (isNewBest) setBestScore(score);
+
+        const bestLine = isNewBest
+            ? `🎉 Новый рекорд!`
+            : `Лучший результат: ${best} из ${gamePool.length}`;
+
+        $box.innerHTML = `
+            <div class="final fade-in">
+                <div class="medal">${medal}</div>
+                <h2>${message}</h2>
+                <h3>${score} из ${gamePool.length}</h3>
+                <div class="best-score">${bestLine}</div>
+                <button class="btn" id="restart" style="max-width:280px;margin:0 auto;">Пройти заново</button>
+            </div>`;
+
+        document.getElementById("restart").addEventListener("click", () => {
+            vibrate(30);
+            start();
+            // Восстанавливаем структуру экрана
+            location.reload();
+        });
+    }
+
+    $next.addEventListener("click", nextQuestion);
+
+    // --- Свайпы ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    const SWIPE_THRESHOLD = 60;   // px
+    const TIME_LIMIT = 800;       // ms
+
+    function showHint(side) {
+        const el = side === "left" ? $hintLeft : $hintRight;
+        el.classList.add("visible");
+        setTimeout(() => el.classList.remove("visible"), 400);
+    }
+
+    document.addEventListener("touchstart", (e) => {
+        const t = e.changedTouches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchStartTime = Date.now();
+    }, { passive: true });
+
+    document.addEventListener("touchend", (e) => {
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        const dt = Date.now() - touchStartTime;
+
+        if (dt > TIME_LIMIT) return;
+        if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+        if (Math.abs(dy) > Math.abs(dx)) return;
+
+        // Свайп возможен только после ответа
+        if (!locked) {
+            showHint(dx > 0 ? "right" : "left");
+            return;
+        }
+
+        if (dx < 0) {
+            // свайп влево → следующий
+            vibrate(20);
+            nextQuestion();
+        } else {
+            // свайп вправо → подсказка "назад нельзя"
+            showHint("right");
+        }
+    }, { passive: true });
+
+    // --- Старт ---
+    start();
+})();
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тест: Все тональности</title>
     <style>
