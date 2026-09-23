@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тест: Все тональности</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f3f5; text-align: center; padding: 10px; margin: 0; }
+        .box { background: white; max-width: 550px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .staff-container { background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 15px 10px; margin: 20px 0; display: flex; justify-content: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 15px 0; }
+        .btn { padding: 14px; border: 2px solid #3498db; background: white; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; transition: 0.15s; }
+        .btn:hover:not(:disabled) { background: #3498db; color: white; }
+        .correct { background: #2ecc71 !important; color: white; border-color: #2ecc71; }
+        .wrong { background: #e74c3c !important; color: white; border-color: #e74c3c; }
+        #next { display: none; width: 100%; background: #2c3e50; color: white; border: none; }
+        #next:hover { background: #1a252f; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h3 style="margin-top:0; color:#2c3e50;">Определите тональность (Все 30 ладов)</h3>
+    <div id="progress" style="color:#7f8c8d; font-size:14px; margin-bottom: 10px;">Вопрос 1 из 10</div>
+    
+    <div class="staff-container" id="canvas"></div>
+    
+    <div class="grid" id="options"></div>
+    <div id="feed" style="font-weight:bold; margin: 15px 0; min-height:22px;"></div>
+    <button id="next" class="btn" onclick="nextQuestion()">Дальше &rarr;</button>
+</div>
+
+<script>
+    // Защищенный текстовый формат координат, который не ломается при передаче
+    const sharpsString = "22,37,17,32,47,27,42"; // фа, до, соль, ре, ля, ми, си
+    const flatsString  = "42,27,47,32,52,37,57"; // си, ми, ля, ре, соль, до, фа
+
+    // Превращаем строки обратно в массивы чисел для работы графики
+    const sharpsY = sharpsString.split(",").map(Number);
+    const flatsY  = flatsString.split(",").map(Number);
+
+    const allKeys = [
+        { name: "До мажор / Ля минор", type: "none", count: 0, alts: ["Соль мажор / Ми минор", "Фа мажор / Ре минор", "Ре мажор / Си минор"] },
+        { name: "Соль мажор / Ми минор", type: "sharp", count: 1, alts: ["До мажор / Ля минор", "Ре мажор / Си минор", "Ля мажор / Фа-диез минор"] },
+        { name: "Ре мажор / Си минор", type: "sharp", count: 2, alts: ["Соль мажор / Ми минор", "Ля мажор / Фа-диез минор", "Ми мажор / До-диез минор"] },
+        { name: "Ля мажор / Фа-диез минор", type: "sharp", count: 3, alts: ["Ре мажор / Си минор", "Ми мажор / До-диез минор", "Си мажор / Соль-диез минор"] },
+        { name: "Ми мажор / До-диез минор", type: "sharp", count: 4, alts: ["Ля мажор / Фа-диез минор", "Си мажор / Соль-диез минор", "Фа-диез мажор / Ре-диез минор"] },
+        { name: "Си мажор / Соль-диез минор", type: "sharp", count: 5, alts: ["Ми мажор / До-диез минор", "Фа-диез мажор / Ре-диез минор", "До-диез мажор / Ля-диез минор"] },
+        { name: "Фа-диез мажор / Ре-диез минор", type: "sharp", count: 6, alts: ["Си мажор / Соль-диез минор", "До-диез мажор / Ля-диез минор", "Ре мажор / Си минор"] },
+        { name: "До-диез мажор / Ля-диез минор", type: "sharp", count: 7, alts: ["Фа-диез мажор / Ре-диез минор", "Си мажор / Соль-диез минор", "Соль мажор / Ми минор"] },
+        { name: "Фа мажор / Ре минор", type: "flat", count: 1, alts: ["До мажор / Ля минор", "Си-бемоль мажор / Соль минор", "Ми-бемоль мажор / До минор"] },
+        { name: "Си-бемоль мажор / Соль минор", type: "flat", count: 2, alts: ["Фа мажор / Ре минор", "Ми-бемоль мажор / До минор", "Ля-бемоль мажор / Фа минор"] },
+        { name: "Ми-бемоль мажор / До минор", type: "flat", count: 3, alts: ["Си-бемоль мажор / Соль минор", "Ля-бемоль мажор / Фа минор", "Ре-бемоль мажор / Си-бемоль минор"] },
+        { name: "Ля-бемоль мажор / Фа минор", type: "flat", count: 4, alts: ["Ми-бемоль мажор / До минор", "Ре-бемоль мажор / Си-бемоль минор", "Соль-бемоль мажор / Ми-бемоль минор"] },
+        { name: "Ре-бемоль мажор / Си-бемоль минор", type: "flat", count: 5, alts: ["Ля-бемоль мажор / Cult", "Соль-бемоль мажор / Ми-бемоль минор", "До-бемоль мажор / Ля-бемоль минор"] },
+        { name: "Соль-бемоль мажор / Ми-бемоль минор", type: "flat", count: 6, alts: ["Ре-бемоль мажор / Си-бемоль минор", "До-бемоль мажор / Ля-бемоль минор", "Фа мажор / Ре минор"] },
+        { name: "До-бемоль мажор / Ля-бемоль минор", type: "flat", count: 7, alts: ["Соль-бемоль мажор / Ми-бемоль минор", "Ре-бемоль мажор / Си-бемоль минор", "Си-бемоль мажор / Соль минор"] }
+    ];
+
+    let gamePool = [], current = 0, score = 0;
+
+    function renderStaffSVG(type, count) {
+        let svg = `<svg width="320" height="85" viewBox="0 0 320 85" xmlns="http://w3.org">`;
+        
+        for (let i = 0; i < 5; i++) {
+            let y = 22 + i * 10;
+            svg += `<line x1="5" y1="${y}" x2="315" y2="${y}" stroke="#000" stroke-width="1.5"/>`;
+        }
+        
+        // Скрипичный ключ
+        svg += `<path d="M26,67 C27,67 29,66 29,63 C29,59 23,54 23,43 C23,31 34,10 34,4 C34,2 32,1 31,1 C29,1 27,8 27,16 C27,27 38,44 38,54 C38,63 32,69 26,69 C20,69 15,64 15,58 C15,47 28,40 37,39 C36,29 29,18 24,25 C21,29 21,35 24,39 C26,41 27,40 26,38 C25,37 24,34 25,31 C27,27 32,32 33,39 C24,41 17,47 17,56 C17,63 21,67 26,67 Z" fill="#000" transform="scale(1.2) translate(-3,-2)"/>`;
+        
+        let startX = 65;
+        
+        if (type === "sharp") {
+            for (let i = 0; i < count; i++) {
+                let x = startX + i * 16;
+                let y = sharpsY[i];
+                svg += `<g transform="translate(${x}, ${y}) scale(0.9)">
+                            <line x1="-3" y1="-4" x2="3" y2="-6" stroke="#000" stroke-width="2.5"/>
+                            <line x1="-3" y1="2" x2="3" y2="0" stroke="#000" stroke-width="2.5"/>
+                            <line x1="-1" y1="-10" x2="-1" y2="6" stroke="#000" stroke-width="1.5"/>
+                            <line x1="1" y1="-7" x2="1" y2="9" stroke="#000" stroke-width="1.5"/>
+                        </g>`;
+            }
+        } 
+        else if (type === "flat") {
+            for (let i = 0; i < count; i++) {
+                let x = startX + i * 15;
+                let y = flatsY[i];
+                svg += `<g transform="translate(${x}, ${y}) scale(0.95)">
+                            <line x1="-2" y1="-12" x2="-2" y2="4" stroke="#000" stroke-width="1.8"/>
+                            <path d="M-2,0 C1,-4 4,-1 2,2 C0,4 -2,2 -2,2" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+                        </g>`;
+            }
+        }
+        
+        svg += `</svg>`;
+        return svg;
+    }
+
+    function start() {
+        gamePool = [...allKeys].sort(() => 0.5 - Math.random()).slice(0, 10);
+        current = 0; score = 0;
+        show();
+    }
+
+    function show() {
+        const q = gamePool[current];
+        document.getElementById("progress").innerText = `Вопрос ${current + 1} из ${gamePool.length}`;
+        document.getElementById("canvas").innerHTML = renderStaffSVG(q.type, q.count);
+        document.getElementById("feed").innerText = "";
+        document.getElementById("next").style.display = "none";
+
+        let opts = [q.name, ...q.alts].sort(() => 0.5 - Math.random());
+        const optDiv = document.getElementById("options");
+        optDiv.innerHTML = "";
+        
+        opts.forEach(opt => {
+            const btn = document.createElement("button");
+            btn.className = "btn";
+            btn.innerText = opt;
+            btn.onclick = () => check(btn, opt);
+            optDiv.appendChild(btn);
+        });
+    }
+
+    function check(btn, chosen) {
+        const q = gamePool[current];
+        const buttons = document.querySelectorAll("#options .btn");
+        buttons.forEach(b => b.disabled = true);
+        
+        if (chosen === q.name) {
+            btn.classList.add("correct");
+            document.getElementById("feed").innerText = "🎉 Абсолютно верно!";
+            document.getElementById("feed").style.color = "#2ecc71";
+            score++;
+        } else {
+            btn.classList.add("wrong");
+            document.getElementById("feed").innerText = "❌ Неверно.";
+            document.getElementById("feed").style.color = "#e74c3c";
+            buttons.forEach(b => { if(b.innerText === q.name) b.classList.add("correct"); });
+        }
+        document.getElementById("next").style.display = "block";
+    }
+
+    function nextQuestion() {
+        current++;
+        if (current < gamePool.length) {
+            show();
+        } else {
+            document.body.innerHTML = `
+                <div class="box">
+                    <h2>Тест завершен!</h2>
+                    <h3>Ваш результат: ${score} из ${gamePool.length}</h3>
+                    <button class="btn" style="width:100%" onclick="location.reload()">Пройти заново</button>
+                </div>`;
+        }
+    }
+
+    window.onload = start;
+</script>
+
+</body>
+</html>
