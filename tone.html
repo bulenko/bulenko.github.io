@@ -552,7 +552,7 @@
 
     document.addEventListener("touchend", (e) => {
         // Игнорируем свайпы на финальном экране
-        if (!$finalScreen.classList.contains("visible") === false) return;
+        if ($finalScreen.classList.contains("visible")) return;
 
         const t = e.changedTouches[0];
         const dx = t.clientX - touchStartX;
