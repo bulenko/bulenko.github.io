@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Тест: Знаки при ключе</title>
+<title>Тест: Знаки при ключе — мажор и минор</title>
 <style>
 :root{--bg:#f0f3f5;--card:#fff;--text:#2c3e50;--muted:#7f8c8d;--border:#e0e4e8;--accent:#3498db;--accent-hover:#2980b9;--correct:#2ecc71;--wrong:#e74c3c;--next-bg:#2c3e50;--shadow:0 4px 20px rgba(0,0,0,.08)}
 @media(prefers-color-scheme:dark){:root{--bg:#1a1d21;--card:#24282d;--text:#e8eaed;--muted:#9aa0a6;--border:#3a3f45;--accent:#4aa8e8;--accent-hover:#5cb6f0;--correct:#34d17a;--wrong:#f0554b;--next-bg:#3a3f45;--shadow:0 4px 20px rgba(0,0,0,.4)}}
@@ -34,7 +34,6 @@ h1{margin:0 0 6px;font-size:clamp(17px,4.5vw,21px);text-align:center;line-height
 .btn-primary{width:100%;min-height:54px;background:var(--accent);color:#fff;border:none;font-size:clamp(15px,4vw,17px);border-radius:10px;cursor:pointer;font-weight:700;font-family:inherit;touch-action:manipulation;transition:background .15s,transform .05s}
 .btn-primary:hover:not(:disabled){background:var(--accent-hover)}
 .btn-primary:active:not(:disabled){transform:scale(.97)}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .btn-next{width:100%;min-height:54px;background:var(--next-bg);color:#fff;border:none;font-size:clamp(15px,4vw,17px);border-radius:10px;cursor:pointer;font-weight:700;font-family:inherit;display:none;touch-action:manipulation;margin-top:10px}
 #finalScreen{display:none;text-align:center;padding:10px 0}
 #finalScreen.visible{display:block}
@@ -42,15 +41,27 @@ h1{margin:0 0 6px;font-size:clamp(17px,4.5vw,21px);text-align:center;line-height
 #finalScreen h2{font-size:clamp(20px,5.5vw,26px);margin:8px 0}
 #finalScreen h3{font-size:clamp(16px,4.5vw,20px);color:var(--accent);margin:12px 0 8px}
 #finalScreen .best-score{color:var(--muted);font-size:clamp(13px,3.5vw,15px);margin-bottom:24px}
-.btn-secondary{width:100%;min-height:46px;background:transparent;color:var(--accent);border:2px solid var(--accent);font-size:clamp(13px,3.6vw,15px);border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;margin-top:8px}
+.btn-secondary{width:100%;min-height:50px;background:transparent;color:var(--accent);border:2px solid var(--accent);font-size:clamp(14px,3.8vw,16px);border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;margin-top:10px;touch-action:manipulation}
 .btn-secondary:hover{background:var(--accent);color:#fff}
+.btn-secondary:active{transform:scale(.97)}
+.mode-title{text-align:center;font-size:clamp(14px,3.8vw,16px);color:var(--muted);margin:0 0 18px}
 </style>
 </head>
 <body>
 <div class="box">
 
-<div id="gameScreen">
-<h1>Знаки при ключе<span class="subtitle">нажмите все знаки, которые стоят при ключе</span></h1>
+<!-- ЭКРАН ВЫБОРА РЕЖИМА -->
+<div id="modeScreen">
+<h1>Знаки при ключе<span class="subtitle">выберите режим тренировки</span></h1>
+<p class="mode-title">В вопросе будет показана тональность. Нужно нажать все знаки, которые стоят при ключе.</p>
+<button class="btn-primary" id="modeMajor" style="margin-bottom:10px;">🎼 Только мажор</button>
+<button class="btn-primary" id="modeMinor" style="margin-bottom:10px;">🎵 Только минор</button>
+<button class="btn-primary" id="modeAll">🎶 Мажор и минор вместе</button>
+</div>
+
+<!-- ИГРОВОЙ ЭКРАН -->
+<div id="gameScreen" style="display:none;">
+<h1 id="gameTitle">Знаки при ключе</h1>
 <div id="progress">Вопрос 1 из 15</div>
 <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 <div class="question-card">
@@ -63,12 +74,14 @@ h1{margin:0 0 6px;font-size:clamp(17px,4.5vw,21px);text-align:center;line-height
 <button class="btn-next" id="nextBtn">Дальше →</button>
 </div>
 
+<!-- ФИНАЛЬНЫЙ ЭКРАН -->
 <div id="finalScreen">
 <div class="medal" id="finalMedal">🎵</div>
 <h2 id="finalMessage"></h2>
 <h3 id="finalScore"></h3>
 <div class="best-score" id="finalBest"></div>
-<button class="btn-primary" id="restart" style="max-width:280px;margin:0 auto;width:100%">Пройти заново</button>
+<button class="btn-primary" id="restart" style="margin-bottom:10px;">Пройти заново</button>
+<button class="btn-secondary" id="backToMode">Выбрать другой режим</button>
 </div>
 
 </div>
@@ -80,31 +93,51 @@ h1{margin:0 0 6px;font-size:clamp(17px,4.5vw,21px);text-align:center;line-height
 var SHARP_ORDER=["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез","Си-диез"];
 var FLAT_ORDER=["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль","Фа-бемоль"];
 
-var allKeys=[
-{name:"До мажор / Ля минор",names:[]},
-{name:"Соль мажор / Ми минор",names:["Фа-диез"]},
-{name:"Ре мажор / Си минор",names:["Фа-диез","До-диез"]},
-{name:"Ля мажор / Фа-диез минор",names:["Фа-диез","До-диез","Соль-диез"]},
-{name:"Ми мажор / До-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез"]},
-{name:"Си мажор / Соль-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез"]},
-{name:"Фа-диез мажор / Ре-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез"]},
-{name:"До-диез мажор / Ля-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез","Си-диез"]},
-{name:"Фа мажор / Ре минор",names:["Си-бемоль"]},
-{name:"Си-бемоль мажор / Соль минор",names:["Си-бемоль","Ми-бемоль"]},
-{name:"Ми-бемоль мажор / До минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль"]},
-{name:"Ля-бемоль мажор / Фа минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль"]},
-{name:"Ре-бемоль мажор / Си-бемоль минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль"]},
-{name:"Соль-бемоль мажор / Ми-бемоль минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль"]},
-{name:"До-бемоль мажор / Ля-бемоль минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль","Фа-бемоль"]}
+var majorKeys=[
+{name:"До мажор",names:[]},
+{name:"Соль мажор",names:["Фа-диез"]},
+{name:"Ре мажор",names:["Фа-диез","До-диез"]},
+{name:"Ля мажор",names:["Фа-диез","До-диез","Соль-диез"]},
+{name:"Ми мажор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез"]},
+{name:"Си мажор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез"]},
+{name:"Фа-диез мажор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез"]},
+{name:"До-диез мажор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез","Си-диез"]},
+{name:"Фа мажор",names:["Си-бемоль"]},
+{name:"Си-бемоль мажор",names:["Си-бемоль","Ми-бемоль"]},
+{name:"Ми-бемоль мажор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль"]},
+{name:"Ля-бемоль мажор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль"]},
+{name:"Ре-бемоль мажор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль"]},
+{name:"Соль-бемоль мажор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль"]},
+{name:"До-бемоль мажор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль","Фа-бемоль"]}
 ];
 
-var STORAGE_KEY="key_signature_best";
+var minorKeys=[
+{name:"Ля минор",names:[]},
+{name:"Ми минор",names:["Фа-диез"]},
+{name:"Си минор",names:["Фа-диез","До-диез"]},
+{name:"Фа-диез минор",names:["Фа-диез","До-диез","Соль-диез"]},
+{name:"До-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез"]},
+{name:"Соль-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез"]},
+{name:"Ре-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез"]},
+{name:"Ля-диез минор",names:["Фа-диез","До-диез","Соль-диез","Ре-диез","Ля-диез","Ми-диез","Си-диез"]},
+{name:"Ре минор",names:["Си-бемоль"]},
+{name:"Соль минор",names:["Си-бемоль","Ми-бемоль"]},
+{name:"До минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль"]},
+{name:"Фа минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль"]},
+{name:"Си-бемоль минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль"]},
+{name:"Ми-бемоль минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль"]},
+{name:"Ля-бемоль минор",names:["Си-бемоль","Ми-бемоль","Ля-бемоль","Ре-бемоль","Соль-бемоль","До-бемоль","Фа-бемоль"]}
+];
+
+var STORAGE_PREFIX="key_signature_mode_";
 var ALL_BUTTONS=SHARP_ORDER.concat(FLAT_ORDER).concat(["__NONE__"]);
 
-var gamePool=[],current=0,score=0,locked=false,selectedNames=[];
+var gamePool=[],current=0,score=0,locked=false,selectedNames=[],currentMode="";
 
+var $modeScreen=document.getElementById("modeScreen");
 var $gameScreen=document.getElementById("gameScreen");
 var $finalScreen=document.getElementById("finalScreen");
+var $gameTitle=document.getElementById("gameTitle");
 var $progress=document.getElementById("progress");
 var $progressFill=document.getElementById("progressFill");
 var $qName=document.getElementById("qName");
@@ -117,15 +150,20 @@ var $finalMessage=document.getElementById("finalMessage");
 var $finalScore=document.getElementById("finalScore");
 var $finalBest=document.getElementById("finalBest");
 var $restart=document.getElementById("restart");
+var $backToMode=document.getElementById("backToMode");
 
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function vibrate(p){if("vibrate" in navigator){try{navigator.vibrate(p);}catch(e){}}}
-function getBest(){var v=parseInt(localStorage.getItem(STORAGE_KEY)||"0",10);return isNaN(v)?0:v;}
-function setBest(v){try{localStorage.setItem(STORAGE_KEY,String(v));}catch(e){}}
+function getBest(mode){var v=parseInt(localStorage.getItem(STORAGE_PREFIX+mode)||"0",10);return isNaN(v)?0:v;}
+function setBest(mode,v){try{localStorage.setItem(STORAGE_PREFIX+mode,String(v));}catch(e){}}
 
-function start(){
-gamePool=shuffle(allKeys);
+function start(mode){
+currentMode=mode;
+if(mode==="major"){gamePool=shuffle(majorKeys);$gameTitle.textContent="Мажорные тональности";}
+else if(mode==="minor"){gamePool=shuffle(minorKeys);$gameTitle.textContent="Минорные тональности";}
+else{gamePool=shuffle(majorKeys.concat(minorKeys));$gameTitle.textContent="Мажор и минор";}
 current=0;score=0;locked=false;
+$modeScreen.style.display="none";
 $finalScreen.classList.remove("visible");
 $gameScreen.style.display="block";
 show();
@@ -234,26 +272,35 @@ function nextQuestion(){current++;if(current<gamePool.length)show();else finish(
 
 function finish(){
 $progressFill.style.width="100%";
-var best=getBest();
+var best=getBest(currentMode);
+var total=gamePool.length;
+var pct=score/total;
 var medal="🎵",message="Хорошее начало!";
-if(score===gamePool.length){medal="🏆";message="Идеально! Вы знаток тональностей!";}
-else if(score>=13){medal="🥇";message="Отличный результат!";}
-else if(score>=10){medal="🥈";message="Хорошо, но есть куда расти.";}
-else if(score>=6){medal="🥉";message="Неплохо, потренируйтесь ещё.";}
-var isNewBest=score>best;if(isNewBest)setBest(score);
+if(score===total){medal="🏆";message="Идеально! Вы знаток тональностей!";}
+else if(pct>=0.85){medal="🥇";message="Отличный результат!";}
+else if(pct>=0.65){medal="🥈";message="Хорошо, но есть куда расти.";}
+else if(pct>=0.4){medal="🥉";message="Неплохо, потренируйтесь ещё.";}
+var isNewBest=score>best;if(isNewBest)setBest(currentMode,score);
 $finalMedal.textContent=medal;
 $finalMessage.textContent=message;
-$finalScore.textContent=score+" из "+gamePool.length;
-$finalBest.textContent=isNewBest?"🎉 Новый рекорд!":"Лучший результат: "+best+" из "+gamePool.length;
+$finalScore.textContent=score+" из "+total;
+$finalBest.textContent=isNewBest?"🎉 Новый рекорд!":"Лучший результат: "+best+" из "+total;
 $gameScreen.style.display="none";
 $finalScreen.classList.add("visible");
 }
 
+document.getElementById("modeMajor").addEventListener("click",function(){vibrate(20);start("major");});
+document.getElementById("modeMinor").addEventListener("click",function(){vibrate(20);start("minor");});
+document.getElementById("modeAll").addEventListener("click",function(){vibrate(20);start("all");});
+
 $checkBtn.addEventListener("click",check);
 $nextBtn.addEventListener("click",nextQuestion);
-$restart.addEventListener("click",function(){vibrate(30);start();});
-
-start();
+$restart.addEventListener("click",function(){vibrate(30);start(currentMode);});
+$backToMode.addEventListener("click",function(){
+$finalScreen.classList.remove("visible");
+$gameScreen.style.display="none";
+$modeScreen.style.display="block";
+});
 })();
 </script>
 </body>
