@@ -3,6 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажёр: Безударные гласные (30 слов)</title>
+    <style>
+        :root { --primary: #4a90e2; --success: #2ecc71; --error: #e74c3c; --dark: #2c3e50; --light: #f8f9fa; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #eef2f7; color: var(--dark); padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .quiz-container { background: white; width: 100%; max-width: 450px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h1 { font-size: 1.15rem; text-align: center; margin-bottom: 15px; color: var(--primary); }
+        .progress-bar { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-bottom: 15px; }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s; }
+        .stats { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 15px; color: #7f8c8d; }
+        .word-box { background: var(--light); border: 2px dashed #bdc3c7; border-radius: 12px; padding: 20px 5px; text-align: center; font-size: 1.8rem; font-weight: bold; letter-spacing: 1px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; justify-content: center; align-items: center; }
+        .context-hint { font-size: 1rem; color: #7f8c8d; font-weight: normal; letter-spacing: 0; }
+        .options { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .btn-opt { background: white; border: 2px solid #dcdde1; border-radius: 8px; width: 80px; padding: 12px 0; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: var(--dark); -webkit-tap-highlight-color: transparent; }
+        .btn-opt.correct { background: var(--success); border-color: var(--success); color: white; }
+        .btn-opt.wrong { background: var(--error); border-color: var(--error); color: white; }
+        .feedback { min-height: 60px; text-align: center; font-size: 1rem; margin-bottom: 15px; line-height: 1.4; }
+        .feedback.win { color: var(--success); } .feedback.lose { color: var(--error); }
+        .btn-next { width: 100%; background: var(--primary); color: white; border: none; border-radius: 8px; padding: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; display: none; }
+        .result-screen { text-align: center; display: none; }
+        .score-text { font-size: 2.5rem; font-weight: bold; color: var(--primary); margin-top: 10px; margin-bottom: 15px; }
+        .btn-restart { background: var(--dark); color: white; border: none; border-radius: 8px; padding: 12px 24px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="quiz-container">
+    <div id="quiz-game">
+        <h1 id="quiz-title">Безударные гласные (Раунд: 30 слов)</h1>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="stats"><span id="counter">Вопрос: 1/30</span><span id="score-counter">Счёт: 0</span></div>
+        <div class="word-box">
+            <div id="word-display">..</div>
+            <div id="hint-display" class="context-hint"></div>
+        </div>
+        <div class="options" id="options-container"></div>
+        <div class="feedback" id="feedback-display"></div>
+        <button class="btn-next" id="btn-next" onclick="nextQ()">Следующее слово</button>
+    </div>
+    <div class="result-screen" id="result-screen">
+        <h2>Тест завершён!</h2>
+        <div class="score-text" id="final-score">0 / 30</div>
+        <p style="color: #7f8c8d; margin-bottom: 20px;" id="comment"></p>
+        <button class="btn-restart" onclick="restart()">Играть снова (новые слова)</button>
+    </div>
+</div>
+<script>
+const raw = {
+'а':"Валы[земляные](ва́л) Глаза(гла́з) Грачи(гра́ч) Дарить(да́р) Жара(жа́р) Катить(ка́тит) Края(кра́й) Мала(ма́ленький) Платить(пла́тит) Сады(са́д) Трава(тра́вы) Шаги(ша́г) Шалун(ша́лость) Старик(ста́рый)",
+'о':"Овца(о́вцы) Дворы(дво́р) Дома(до́м) Дожди(до́ждь) Кроты(кро́т) Мосты(мо́ст) Ножи(но́ж) Нора(но́ры) Носатый(но́с) Ночной(но́чь) Окно(о́кна) Поля(по́ле) Рога(ро́г) Роса(ро́сы) Слоны(сло́н) Слова(сло́во) Сова(со́вы) Сосна(со́сны) Столы(сто́л) Холмы(хо́лм) Вода(во́дный) Ходить(хо́дит) Болеть(бо́ль) Борода(бо́роду) Борьба(бо́рется) Возить(во́зит) Волна(во́лны) Ворона(во́рон) Гора(го́ры) Гроза(гро́зы) Доска(до́ски) Дрова(дро́в) Кольцо(ко́льца) Кормить(ко́рм) Кора(ко́рка) Ловить(ло́вит) Лошадка(ло́шадь) Молчать(мо́лча) Носить(но́сит) Огонь(о́гненный) Озеро(нет о́зера) Просить(про́сит) Родной(ро́дина) Смотреть(смо́трит) Солить(со́ль) Точить(то́чит)",
+'е':"Снежинка(сне́́г) Свеча(све́чи) Лебяжий(ле́́бедь) Летать(полё́т) Стекло(стё́кла) Зерно(зё́рна) Озеро(озё́ра) Снега(сне́́г) Бегун(бе́́г) Беда(бе́́ды) Белеть(бе́́лый) Ведро(вё́дра) Везти(вё́з) Веселье(ве́́село) Весна(вё́сны) Ветер(ве́́тры) Вечерний(ве́́чер) Гнездо(гнё́зда) Дела(де́́ло) Слепой(сле́́п) Хлеба(хле́́б) Степной(сте́́пь) Стрела(стре́́лы) Держать(де́́ржит) Делить(де́́лит) Деревья(де́́рево) Ежи(ё́ж) Звезда(звё́зды) Звериный(зве́́рь) Зеленеть(зе́́лень) Земля(зе́́мли) Зеркальный(зе́́ркало) Змея(зме́́и) Ледник(лё́д) Ленивый(ле́́нь) Леса[густые](ле́́с) Медовый(мё́д) Места(ме́́сто) Небеса(не́́бо) Нести(нё́с) Оперение(пе́́рья) Перо(пе́́рья) Плечо(пле́́чи) Плести(плё́л) Река(ре́́ки) Светлячок(све́́т) Сестра(сё́стры) Снегирь(сне́́г)",
+'и':"Грибы(гри́б) Лиса[рыжая](ли́́сы) Зима(зи́́мы) Синеть(си́́ний) Блины(бли́́н) Винты(ви́́нт) Вишнёвый(ви́́шня) Дикарь(ди́́кий) Живой(жи́́ть) Игрушка(и́́гры) Китёнок(ки́́т) Крикливый(кри́́к) Линейка(ли́́ния) Листы(ли́́ст) Лицо(ли́́ца) Мирить(ми́́р) Низина(ни́́з) Ниточка(ни́́ть) Писатель(пи́́шет) Пищать(пи́́ск) Питание(пи́́ща) Питьё(пить) Плита(пли́́ты) Птенцы(пте́́нчик) Свистеть(сви́́ст) Сидеть(си́́дя) Скрипеть(скри́́п) Слива(сли́́вы) Спина(спи́́ны) Стрижи(стри́́ж) Тишина(ти́́хий) Цвести(цве́́т) Чижи(чи́́ж) Чистый(чи́́стить) Широкий(ши́́рь) Щипать(щи́́плет) Хитрец(хи́́трый)",
+'я':"Мясной(мя́́со) Тяжёлый(тя́́жесть) Вязать(вя́́жет) Глядеть(взгля́́д) Грязища(гря́́зь) Клясться(кля́́тва) Мячи(мя́́ч) Объяснять(я́́сно) Плясать(пля́́ска) Пятак(пя́́ть) Пятно(пя́́тна) Ряды(ря́́д) Связист(свя́́зь) Смягчить(мя́́гкий) Стряпня(стря́́пать) Тянуть(тя́́нет) Увязать(увя́́з) Явиться(я́́вка) Ягодичный(я́́года) Ядро(я́́дра) Яичница(я́́йца) Якоря(я́́корь) Яростно(я́́рость) Ясельный(я́́сли) Ястребиный(я́́стреб) Ящерица(я́́щер)"
+};
+
+let list = [], idx = 0, score = 0, done = false;
+const ROUND_SIZE = 30;
+
+function getPair(letter, word) {
+    let l = letter.toLowerCase();
+    if (l === 'а' || l === 'о') return ['а', 'о'];
+    if (l === 'е' || l === 'и') return ['е', 'и'];
+    if (l === 'я') {
+        let w = word.toLowerCase();
+        if (w.includes('гляд') || w.includes('леб') || w.includes('объясн') || w.includes('слеп') || w.includes('степ') || w.includes('стрел') || w.includes('текст') || w.includes('ясн') || w.includes('ястреб') || w.includes('тяж')) {
+            return ['е', 'я'];
+        }
+        return ['а', 'я'];
+    }
+    return ['а', 'о'];
+}
+
+function init() {
+    let allWords = [];
+    idx = 0; score = 0;
+    
+    for (let L in raw) {
+        raw[L].split(" ").forEach(item => {
+            if(!item) return;
+            
+            let context = "";
+            let cleanItem = item;
+            if (item.includes("[")) {
+                let start = item.indexOf("[");
+                let end = item.indexOf("]");
+                context = item.substring(start + 1, end);
+                cleanItem = item.substring(0, start) + item.substring(end + 1);
+            }
+            
+            let p = cleanItem.replace(")","").split("(");
+            let rawWord = p[0];
+            let checkWord = p[1];
+            
+            let reg = new RegExp(L, "i");
+            let blankWord = rawWord.replace(reg, "..");
+            
+            allWords.push({ 
+                w: rawWord, 
+                b: blankWord, 
+                c: L, 
+                t: checkWord,
+                ctx: context 
+            });
+        });
+    }
+    
+    // Надежное перемешивание Фишера-Йетса
+    for (let i = allWords.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
+    }
+    
+    list = allWords.slice(0, ROUND_SIZE);
+}
+
+function show() {
+    done = false;
+    document.getElementById("btn-next").style.display = "none";
+    document.getElementById("feedback-display").innerHTML = "";
+    
+    let q = list[idx];
+    document.getElementById("word-display").innerText = q.b;
+    
+    let hintDiv = document.getElementById("hint-display");
+    if(q.ctx) {
+        hintDiv.innerText = `(${q.ctx})`;
+        hintDiv.style.display = "block";
+    } else {
+        hintDiv.style.display = "none";
+    }
+    
+    document.getElementById("counter").innerText = `Вопрос: ${idx + 1}/${list.length}`;
+    document.getElementById("score-counter").innerText = `Счёт: ${score}`;
+    document.getElementById("progress").style.width = (idx / list.length) * 100 + "%";
+
+    let pair = getPair(q.c, q.w);
+    let container = document.getElementById("options-container");
+    container.innerHTML = "";
+    
+    pair.forEach(letter => {
+        let btn = document.createElement("button");
+        btn.className = "btn-opt";
+        btn.innerText = letter.toUpperCase();
+        btn.onclick = () => check(letter, btn);
+        container.appendChild(btn);
+    });
+}
+
+function check(L, clickedBtn) {
+    if(done) return; done = true;
+    let q = list[idx];
+    let win = (L === q.c);
+    if(win) score++;
+    
+    let btns = document.querySelectorAll(".btn-opt");
+    btns.forEach(b => {
+        if(b.innerText.toLowerCase() === q.c) b.classList.add("correct");
+        if(!win && b === clickedBtn) b.classList.add("wrong");
+    });
+
+    let f = document.getElementById("feedback-display");
+    if(win) {
+        f.innerHTML = `✨ Верно! <strong>${q.w}</strong><br>Проверочное слово: <strong>«${q.t}»</strong>`;
+        f.className = "feedback win";
+    } else {
+        f.innerHTML = `❌ Ошибка! Правильно: <strong>${q.w}</strong><br>Проверочное слово: <strong>«${q.t}»</strong>`;
+        f.className = "feedback lose";
+    }
+    document.getElementById("btn-next").style.display = "block";
+}
+
+function nextQ() {
+    idx++;
+    if(idx < list.length) show();
+    else {
+        document.getElementById("quiz-game").style.display = "none";
+        document.getElementById("result-screen").style.display = "block";
+        document.getElementById("final-score").innerText = `${score} / ${list.length}`;
+        let c = "📚 Попробуйте ещё раз, повторите правила!";
+        let pct = score / list.length;
+        if(pct === 1) c = "🥇 Превосходно! Ни одной ошибки, идеальные знания!";
+        else if(pct >= 0.9) c = "🌟 Отлично! Прекрасный результат, твердая пятерка!";
+        else if(pct >= 0.7) c = "👍 Хорошо, но можно немного потренироваться!";
+        document.getElementById("comment").innerText = c;
+    }
+}
+
+function restart() {
+    document.getElementById("quiz-game").style.display = "block";
+    document.getElementById("result-screen").style.display = "none";
+    init(); show();
+}
+
+init(); show();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тренажёр: Безударные гласные</title>
     <style>
         :root { --primary: #4a90e2; --success: #2ecc71; --error: #e74c3c; --dark: #2c3e50; --light: #f8f9fa; }
